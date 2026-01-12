@@ -196,6 +196,902 @@
       color: #ffb3b3;
     }
 
+    .server-list {
+      margin-top: 10px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #241510;
+      border: 1px solid #3a241a;
+      font-size: 12px;
+      display: none;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .server-item {
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #3a241a;
+      margin-bottom: 4px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .server-item span {
+      font-size: 11px;
+    }
+
+    .server-item:hover {
+      background: #3a241a;
+    }
+
+    .lock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--coffee-muted);
+    }
+
+    .lock-row label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .lock-row input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    /* SOLO MODE PANEL (bottom-right) */
+    .solo-panel {
+      position: absolute;
+      right: 8px;
+      bottom: 48px;
+      width: 220px;
+      background: rgba(20, 10, 7, 0.96);
+      border-radius: 12px;
+      border: 1px solid #3a241a;
+      padding: 8px 8px 10px;
+      font-size: 11px;
+      display: none;
+      z-index: 19;
+    }
+
+    .solo-header {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .solo-close-btn {
+      background: #f5c38b;
+      color: #2b1a14;
+      border: none;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .solo-toggle-btn {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: none;
+      background: #f5c38b;
+      color: #2b1a14;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    .solo-select {
+      width: 100%;
+      padding: 4px 6px;
+      border-radius: 8px;
+      border: 1px solid #3a241a;
+      background: #3a241a;
+      color: var(--coffee-text);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .solo-board {
+      margin-top: 4px;
+      border-radius: 8px;
+      border: 1px solid #3a241a;
+      padding: 4px;
+      background: #241510;
+      min-height: 100px;
+    }
+
+    .solo-status {
+      font-size: 11px;
+      color: var(--coffee-muted);
+      min-height: 14px;
+    }
+
+    /* Simple boards for games */
+    .board {
+      margin-top: 8px;
+      display: grid;
+      gap: 2px;
+    }
+
+    .board-cell {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      background: #3a241a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .board-cell:hover {
+      background: #4a2f20;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="coffee-shell">
+    <h1>Coffee☕</h1>
+
+    <div class="row">
+      <input id="emojiInput" placeholder="Emoji" maxlength="4" />
+      <input id="nameInput" placeholder="Name" maxlength="20" />
+    </div>
+
+    <div class="row">
+      <button id="hostBtn">Make Coffee</button>
+      <button id="joinBtn">Get Coffee☕</button>
+    </div>
+
+    <div class="profile" id="profileBox">
+      <div class="profile-line">
+        <span class="profile-emoji" id="profileEmoji">🙂</span>
+        <span id="profileName">Coffee</span>
+      </div>
+      <div class="profile-line">
+        <span id="profileDevice">📱 Device</span>
+      </div>
+    </div>
+
+    <div class="status" id="status"></div>
+    <div class="error" id="error"></div>
+
+    <!-- Server list for joiners -->
+    <div class="server-list" id="serverList"></div>
+
+    <!-- Game room -->
+    <div class="game-panel" id="gamePanel">
+      <select id="gameCategorySelect">
+        <option value="">Select mode…</option>
+        <option value="competitive">2‑Player Games</option>
+        <option value="teamwork">Teamwork Mode</option>
+      </select>
+
+      <select id="gameSelect">
+        <option value="">Select a game…</option>
+      </select>
+
+      <div id="playerOrderRow" class="row">
+        <select id="player1Select">
+          <option value="host">Player 1: Host</option>
+          <option value="joiner">Player 1: Joiner</option>
+          <option value="random">Player 1: Random</option>
+        </select>
+        <select id="player2Select">
+          <option value="joiner">Player 2: Joiner</option>
+          <option value="host">Player 2: Host</option>
+          <option value="random">Player 2: Random</option>
+        </select>
+      </div>
+
+      <div class="lock-row">
+        <label>
+          <input type="checkbox" id="chatLockToggle" />
+          <span>Lock chat (both lose chat)</span>
+        </label>
+      </div>
+
+      <button id="startGameBtn">Start Game</button>
+
+      <div id="boardContainer"></div>
+
+      <div class="chat-shell">
+        <div class="chat-log" id="chatLog"></div>
+        <div class="chat-input-row" id="chatInputRow">
+          <input id="chatInput" placeholder="Chat…" />
+          <button id="chatSendBtn">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOLO MODE PANEL -->
+    <div class="solo-panel" id="soloPanel">
+      <div class="solo-header">
+        <span>Solo Mode</span>
+        <button id="soloCloseBtn" class="solo-close-btn">X</button>
+      </div>
+      <select id="soloGameSelect" class="solo-select">
+        <option value="tictactoe">Tic-Tac-Toe</option>
+        <option value="rps">Rock–Paper–Scissors</option>
+        <option value="connect4">Connect 4</option>
+      </select>
+      <select id="soloControlSelect" class="solo-select">
+        <option value="both">Control: Both sides</option>
+        <option value="ai">Control: AI opponent</option>
+      </select>
+      <div class="solo-board" id="soloBoard"></div>
+      <div class="solo-status" id="soloStatus"></div>
+    </div>
+
+    <!-- SOLO BUTTON -->
+    <button id="soloToggleBtn" class="solo-toggle-btn">SOLO</button>
+  </div>
+
+  <script>
+    // DOM refs
+    const emojiInput = document.getElementById("emojiInput");
+    const nameInput = document.getElementById("nameInput");
+    const hostBtn = document.getElementById("hostBtn");
+    const joinBtn = document.getElementById("joinBtn");
+    const profileBox = document.getElementById("profileBox");
+    const profileEmoji = document.getElementById("profileEmoji");
+    const profileName = document.getElementById("profileName");
+    const profileDevice = document.getElementById("profileDevice");
+    const statusEl = document.getElementById("status");
+    const errorEl = document.getElementById("error");
+    const serverListEl = document.getElementById("serverList");
+    const gamePanel = document.getElementById("gamePanel");
+    const gameCategorySelect = document.getElementById("gameCategorySelect");
+    const gameSelect = document.getElementById("gameSelect");
+    const player1Select = document.getElementById("player1Select");
+    const player2Select = document.getElementById("player2Select");
+    const chatLockToggle = document.getElementById("chatLockToggle");
+    const startGameBtn = document.getElementById("startGameBtn");
+    const boardContainer = document.getElementById("boardContainer");
+    const chatLog = document.getElementById("chatLog");
+    const chatInputRow = document.getElementById("chatInputRow");
+    const chatInput = document.getElementById("chatInput");
+    const chatSendBtn = document.getElementById("chatSendBtn");
+
+    const soloToggleBtn = document.getElementById("soloToggleBtn");
+    const soloCloseBtn = document.getElementById("soloCloseBtn");
+    const soloPanel = document.getElementById("soloPanel");
+    const soloGameSelect = document.getElementById("soloGameSelect");
+    const soloControlSelect = document.getElementById("soloControlSelect");
+    const soloBoard = document.getElementById("soloBoard");
+    const soloStatus = document.getElementById("soloStatus");
+
+    // State
+    let isHost = false;
+    let isConnected = false;
+    let deviceRole = "host"; // "host" or "joiner"
+    let currentGame = null;
+    let currentCategory = null;
+
+    // Placeholder Bluetooth objects (no real implementation here)
+    let btDevice = null;
+    let btServer = null;
+    let btCharacteristic = null;
+
+    function setStatus(msg) {
+      statusEl.textContent = msg || "";
+    }
+
+    function setError(msg) {
+      errorEl.textContent = msg || "";
+    }
+
+    function detectDeviceIcon() {
+      const ua = navigator.userAgent || "";
+      if (/Windows/i.test(ua)) return "🖥 Windows";
+      if (/Macintosh|Mac OS X/i.test(ua)) return "💻Mac&Cheese🧀";
+      if (/Android/i.test(ua)) return "📱 Android";
+      if (/iPhone|iPad|iPod/i.test(ua)) return "📱 iOS";
+      return "🎮 Controller";
+    }
+
+    function isSingleEmoji(str) {
+      if (!str) return false;
+      const trimmed = str.trim();
+      const codePoints = Array.from(trimmed);
+      return codePoints.length === 1;
+    }
+
+    function validateName(str) {
+      if (!str) return false;
+      const trimmed = str.trim();
+      if (!trimmed) return false;
+      const spaceCount = (trimmed.match(/ /g) || []).length;
+      if (spaceCount > 1) return false;
+      if (!/^[A-Za-z0-9 ]+$/.test(trimmed)) return false;
+      return true;
+    }
+
+    function updateProfile() {
+      const emoji = emojiInput.value.trim();
+      const nameRaw = nameInput.value.trim();
+
+      if (!isSingleEmoji(emoji)) {
+        setError("Emoji must be exactly one emoji.");
+        profileBox.style.display = "none";
+        return false;
+      }
+
+      if (!validateName(nameRaw)) {
+        setError("Name must be letters/numbers, max one space.");
+        profileBox.style.display = "none";
+        return false;
+      }
+
+      let name = nameRaw;
+      let deviceLine = detectDeviceIcon();
+
+      if (name.endsWith("@%")) {
+        name = name.slice(0, -2);
+        deviceLine = "😎";
+      }
+
+      profileEmoji.textContent = emoji;
+      profileName.textContent = name || "Coffee";
+      profileDevice.textContent = deviceLine;
+      profileBox.style.display = "block";
+      setError("");
+      return true;
+    }
+
+    emojiInput.addEventListener("input", updateProfile);
+    nameInput.addEventListener("input", updateProfile);
+
+    // SOLO toggle
+    soloToggleBtn.addEventListener("click", () => {
+      if (soloPanel.style.display === "none" || soloPanel.style.display === "") {
+        soloPanel.style.display = "block";
+      } else {
+        soloPanel.style.display = "none";
+      }
+    });
+
+    soloCloseBtn.addEventListener("click", () => {
+      soloPanel.style.display = "none";
+    });
+
+    // SOLO games (simple local implementations)
+    function renderSoloTicTacToe() {
+      soloBoard.innerHTML = "";
+      soloStatus.textContent = "Tic-Tac-Toe (solo)";
+      const board = document.createElement("div");
+      board.className = "board";
+      board.style.gridTemplateColumns = "repeat(3, 32px)";
+      const cells = Array(9).fill(null);
+      let current = "X";
+
+      cells.forEach((_, i) => {
+        const cell = document.createElement("div");
+        cell.className = "board-cell";
+        cell.addEventListener("click", () => {
+          if (cells[i]) return;
+          cells[i] = current;
+          cell.textContent = current;
+          current = current === "X" ? "O" : "X";
+        });
+        board.appendChild(cell);
+      });
+
+      soloBoard.appendChild(board);
+    }
+
+    function renderSoloRPS() {
+      soloBoard.innerHTML = "";
+      soloStatus.textContent = "Rock–Paper–Scissors (solo)";
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.gap = "4px";
+
+      ["🪨", "📄", "✂️"].forEach((sym) => {
+        const btn = document.createElement("button");
+        btn.textContent = sym;
+        btn.style.flex = "1";
+        btn.addEventListener("click", () => {
+          const choices = ["🪨", "📄", "✂️"];
+          const ai = choices[Math.floor(Math.random() * choices.length)];
+          soloStatus.textContent = `You: ${sym} | AI: ${ai}`;
+        });
+        row.appendChild(btn);
+      });
+
+      soloBoard.appendChild(row);
+    }
+
+    function renderSoloConnect4() {
+      soloBoard.innerHTML = "";
+      soloStatus.textContent = "Connect 4 (solo)";
+      const rows = 6;
+      const cols = 7;
+      const grid = Array.from({ length: rows }, () => Array(cols).fill(null));
+      const board = document.createElement("div");
+      board.className = "board";
+      board.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
+      let current = "●";
+
+      function drop(col) {
+        for (let r = rows - 1; r >= 0; r--) {
+          if (!grid[r][col]) {
+            grid[r][col] = current;
+            render();
+            current = current === "●" ? "○" : "●";
+            return;
+          }
+        }
+      }
+
+      function render() {
+        board.innerHTML = "";
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const cell = document.createElement("div");
+            cell.className = "board-cell";
+            cell.textContent = grid[r][c] || "";
+            cell.addEventListener("click", () => drop(c));
+            board.appendChild(cell);
+          }
+        }
+      }
+
+      render();
+      soloBoard.appendChild(board);
+    }
+
+    function renderSoloGame() {
+      const game = soloGameSelect.value;
+      if (game === "tictactoe") renderSoloTicTacToe();
+      else if (game === "rps") renderSoloRPS();
+      else if (game === "connect4") renderSoloConnect4();
+    }
+
+    soloGameSelect.addEventListener("change", renderSoloGame);
+    soloControlSelect.addEventListener("change", renderSoloGame);
+    renderSoloGame();
+
+    // Chat
+    function addChatMessage(text, type = "system") {
+      const div = document.createElement("div");
+      if (type === "host") div.className = "chat-msg-host";
+      else if (type === "joiner") div.className = "chat-msg-joiner";
+      else div.className = "chat-msg-system";
+      div.textContent = text;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    chatSendBtn.addEventListener("click", () => {
+      const msg = chatInput.value.trim();
+      if (!msg) return;
+      const role = isHost ? "host" : "joiner";
+      addChatMessage(msg, role);
+      chatInput.value = "";
+      // In real implementation, send over Bluetooth
+    });
+
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") chatSendBtn.click();
+    });
+
+    chatLockToggle.addEventListener("change", () => {
+      const locked = chatLockToggle.checked;
+      chatInputRow.style.display = locked ? "none" : "flex";
+      addChatMessage(
+        locked ? "Chat locked for both players." : "Chat unlocked for both players.",
+        "system"
+      );
+      // In real implementation, sync lock state over Bluetooth
+    });
+
+    // Game category + game list
+    const competitiveGames = [
+      { value: "chess", label: "Chess" },
+      { value: "tictactoe", label: "Tic-Tac-Toe" },
+      { value: "connect4", label: "Connect 4" },
+      { value: "battleship", label: "Battleship (Micro)" },
+      { value: "reversi", label: "Othello / Reversi" },
+      { value: "pong", label: "Pong Duel" },
+      { value: "memory", label: "Memory Match" },
+      { value: "dots", label: "Dots & Boxes" },
+      { value: "wordduel", label: "Word Guess Duel" },
+      { value: "codebreaker", label: "Code Breaker" },
+      { value: "gridchase", label: "Grid Chase" },
+      { value: "war", label: "War (Card Duel)" },
+    ];
+
+    const teamworkGames = [
+      { value: "randompuzzle", label: "Random Teamwork Puzzle" },
+      { value: "maze", label: "Co‑op Maze Escape" },
+      { value: "tilerush", label: "Co‑op Tile Rush" },
+      { value: "reaction", label: "Co‑op Reaction Chain" },
+      { value: "pattern", label: "Co‑op Pattern Sync" },
+      { value: "wordbuilder", label: "Co‑op Word Builder" },
+    ];
+
+    function populateGameSelect(category) {
+      gameSelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Select a game…";
+      gameSelect.appendChild(placeholder);
+
+      const list = category === "competitive" ? competitiveGames : teamworkGames;
+      list.forEach((g) => {
+        const opt = document.createElement("option");
+        opt.value = g.value;
+        opt.textContent = g.label;
+        gameSelect.appendChild(opt);
+      });
+
+      const showPlayerOrder = category === "competitive";
+      document.getElementById("playerOrderRow").style.display = showPlayerOrder
+        ? "flex"
+        : "none";
+    }
+
+    gameCategorySelect.addEventListener("change", () => {
+      currentCategory = gameCategorySelect.value || null;
+      if (!currentCategory) {
+        gameSelect.innerHTML = "";
+        return;
+      }
+      populateGameSelect(currentCategory);
+    });
+
+    // Simple local boards for a few games (visual only)
+    function renderTicTacToeBoard() {
+      boardContainer.innerHTML = "";
+      const board = document.createElement("div");
+      board.className = "board";
+      board.style.gridTemplateColumns = "repeat(3, 32px)";
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.className = "board-cell";
+        board.appendChild(cell);
+      }
+      boardContainer.appendChild(board);
+    }
+
+    function renderConnect4Board() {
+      boardContainer.innerHTML = "";
+      const rows = 6;
+      const cols = 7;
+      const board = document.createElement("div");
+      board.className = "board";
+      board.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cell = document.createElement("div");
+          cell.className = "board-cell";
+          board.appendChild(cell);
+        }
+      }
+      boardContainer.appendChild(board);
+    }
+
+    function renderRandomTeamworkPuzzle() {
+      boardContainer.innerHTML = "";
+      const size = 5;
+      const board = document.createElement("div");
+      board.className = "board";
+      board.style.gridTemplateColumns = `repeat(${size}, 32px)`;
+      const symbols = ["★", "●", "▲", "■", "◆"];
+      for (let i = 0; i < size * size; i++) {
+        const cell = document.createElement("div");
+        cell.className = "board-cell";
+        cell.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        board.appendChild(cell);
+      }
+      boardContainer.appendChild(board);
+      addChatMessage("Random teamwork puzzle generated.", "system");
+    }
+
+    function renderGameBoard(gameId) {
+      if (!gameId) {
+        boardContainer.innerHTML = "";
+        return;
+      }
+      if (gameId === "tictactoe") renderTicTacToeBoard();
+      else if (gameId === "connect4") renderConnect4Board();
+      else if (gameId === "randompuzzle") renderRandomTeamworkPuzzle();
+      else {
+        boardContainer.innerHTML = "";
+        const msg = document.createElement("div");
+        msg.style.fontSize = "12px";
+        msg.style.color = "#c9b39a";
+        msg.textContent = "Game UI placeholder (logic not implemented here).";
+        boardContainer.appendChild(msg);
+      }
+    }
+
+    startGameBtn.addEventListener("click", () => {
+      if (!currentCategory) {
+        setError("Select a mode first.");
+        return;
+      }
+      const gameId = gameSelect.value;
+      if (!gameId) {
+        setError("Select a game first.");
+        return;
+      }
+      setError("");
+      currentGame = gameId;
+
+      const p1 = player1Select.value;
+      const p2 = player2Select.value;
+
+      addChatMessage(
+        `Host started "${gameSelect.options[gameSelect.selectedIndex].text}" (${currentCategory}).`,
+        "system"
+      );
+      if (currentCategory === "competitive") {
+        addChatMessage(
+          `Player 1: ${p1.toUpperCase()} | Player 2: ${p2.toUpperCase()}`,
+          "system"
+        );
+      } else {
+        addChatMessage("Teamwork mode: both players cooperate.", "system");
+      }
+
+      renderGameBoard(gameId);
+      // In real implementation, sync game start + settings over Bluetooth
+    });
+
+    // Server list (fake for now)
+    function showFakeServerList() {
+      serverListEl.innerHTML = "";
+      const servers = [
+        { emoji: "🙂", name: "Rin", device: "📱 Android", strength: "Strong" },
+        { emoji: "😎", name: "CoolHost", device: "🖥 Windows", strength: "Medium" },
+        { emoji: "🐈", name: "CatCafe", device: "💻Mac&Cheese🧀", strength: "Weak" },
+      ];
+      servers.forEach((s) => {
+        const item = document.createElement("div");
+        item.className = "server-item";
+        const left = document.createElement("span");
+        left.textContent = `${s.emoji} ${s.name} — ${s.device}`;
+        const right = document.createElement("span");
+        right.textContent = s.strength;
+        item.appendChild(left);
+        item.appendChild(right);
+        item.addEventListener("click", () => {
+          connectAsJoinerFake(s);
+        });
+        serverListEl.appendChild(item);
+      });
+      serverListEl.style.display = "block";
+    }
+
+    function connectAsJoinerFake(server) {
+      setStatus(`Joining ${server.name}'s Coffee…`);
+      serverListEl.style.display = "none";
+      isHost = false;
+      deviceRole = "joiner";
+      isConnected = true;
+      gamePanel.style.display = "block";
+      addChatMessage(`Connected to ${server.emoji} ${server.name}.`, "system");
+    }
+
+    // Bluetooth host (placeholder)
+    async function connectAsHost() {
+      isHost = true;
+      deviceRole = "host";
+      // Real Web Bluetooth would go here
+      setStatus("Hosting Coffee… (Bluetooth pairing placeholder)");
+      isConnected = true;
+      gamePanel.style.display = "block";
+      addChatMessage("You are now hosting Coffee.", "system");
+    }
+
+    hostBtn.addEventListener("click", () => {
+      if (!navigator.bluetooth) {
+        setStatus("Web Bluetooth not supported in this browser.");
+        return;
+      }
+      if (!updateProfile()) return;
+      setStatus("Starting Coffee host…");
+      connectAsHost();
+    });
+
+    joinBtn.addEventListener("click", () => {
+      if (!navigator.bluetooth) {
+        setStatus("Web Bluetooth not supported in this browser.");
+        return;
+      }
+      if (!updateProfile()) return;
+      setStatus("Searching for Coffee servers…");
+      showFakeServerList();
+    });
+  </script>
+</body>
+</html>      justify-content: center;
+      padding: 16px;
+    }
+
+    .coffee-shell {
+      background: var(--coffee-panel);
+      border-radius: 16px;
+      padding: 16px 18px 18px;
+      width: 430px;
+      max-width: 100%;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+      border: 1px solid #3a241a;
+      position: relative;
+      overflow: hidden;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    input {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #3a241a;
+      background: var(--coffee-input-bg);
+      color: var(--coffee-text);
+      font-size: 14px;
+    }
+
+    input::placeholder {
+      color: #a88a72;
+    }
+
+    button {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: none;
+      background: var(--coffee-btn-bg);
+      color: var(--coffee-btn-text);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease,
+        background 0.1s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+      background: #ffd19f;
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .profile {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #241510;
+      border: 1px solid #3a241a;
+      font-size: 14px;
+      display: none;
+    }
+
+    .profile-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .profile-emoji {
+      font-size: 20px;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--coffee-muted);
+      min-height: 16px;
+    }
+
+    .error {
+      color: var(--coffee-danger);
+      font-size: 12px;
+      margin-top: 4px;
+      min-height: 14px;
+    }
+
+    .game-panel {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid #3a241a;
+      display: none;
+    }
+
+    select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #3a241a;
+      background: #3a241a;
+      color: var(--coffee-text);
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .chat-shell {
+      margin-top: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: var(--coffee-chat-bg);
+      border: 1px solid var(--coffee-chat-border);
+      font-size: 12px;
+    }
+
+    .chat-log {
+      max-height: 90px;
+      overflow-y: auto;
+      margin-bottom: 4px;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .chat-input-row input {
+      font-size: 12px;
+      padding: 4px 6px;
+    }
+
+    .chat-input-row button {
+      font-size: 12px;
+      padding: 4px 6px;
+    }
+
+    .chat-msg-host {
+      color: #ffd8a0;
+    }
+
+    .chat-msg-joiner {
+      color: #c0e6ff;
+    }
+
+    .chat-msg-system {
+      color: #ffb3b3;
+    }
+
     /* SOLO MODE PANEL (bottom-right) */
     .solo-panel {
       position: absolute;
@@ -1128,3 +2024,4 @@
   </script>
 </body>
 </html>
+
