@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Coffee Game</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+@font-face{font-family:'Chicago';src:url('Chicago.ttf') format('truetype');}
+:root{--bg:#1f130f;--panel:#2b1a14;--accent:#f5c38b;--text:#fdf5e6;--muted:#c9b39a;--chatbg:#241510;--border:#3a241a;--danger:#ff6b6b;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Chicago',system-ui,sans-serif;image-rendering:pixelated;image-rendering:crisp-edges;}
+body{background:radial-gradient(circle at top,#3b241a 0,#120806 55%);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:8px;}
+.shell{width:430px;max-width:100%;background:var(--panel);border-radius:12px;padding:10px;border:1px solid var(--border);box-shadow:0 0 18px rgba(0,0,0,.6);font-size:13px;}
+h1{text-align:center;margin-bottom:6px;font-size:18px;}
+.row{display:flex;gap:6px;margin-bottom:6px;}
+input,select,button{font-family:inherit;font-size:12px;}
+input{flex:1;padding:4px 6px;border-radius:8px;border:1px solid var(--border);background:#3a241a;color:var(--text);}
+input::placeholder{color:#a88a72;}
+button{flex:1;padding:6px 8px;border-radius:999px;border:none;background:var(--accent);color:#2b1a14;font-weight:600;cursor:pointer;}
+button:hover{background:#ffd19f;}
+.profile{margin-top:4px;padding:6px;border-radius:8px;background:var(--chatbg);border:1px solid var(--border);display:none;}
+.profile-line{display:flex;align-items:center;gap:4px;}
+.profile-emoji{font-size:18px;}
+#status{margin-top:4px;font-size:11px;color:var(--muted);min-height:12px;}
+#error{margin-top:2px;font-size:11px;color:var(--danger);min-height:12px;}
+.hidden{display:none!important;}
+.section{margin-top:8px;padding-top:6px;border-top:1px solid var(--border);}
+select{width:100%;padding:4px 6px;border-radius:8px;border:1px solid var(--border);background:#3a241a;color:var(--text);margin-bottom:4px;}
+.chat-shell{margin-top:6px;padding:6px;border-radius:8px;background:var(--chatbg);border:1px solid var(--border);font-size:11px;}
+.chat-log{max-height:90px;overflow-y:auto;margin-bottom:4px;}
+.chat-input-row{display:flex;gap:4px;}
+.chat-input-row input{font-size:11px;padding:3px 4px;}
+.chat-input-row button{font-size:11px;padding:3px 4px;}
+.chat-msg-self{color:#ffd8a0;}
+.chat-msg-remote{color:#c0e6ff;}
+.chat-msg-system{color:#ffb3b3;}
+.board{display:grid;gap:1px;margin-top:4px;justify-content:center;}
+.board-cell{width:26px;height:26px;border-radius:3px;background:#3a241a;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;}
+.board-cell:hover{background:#4a2f20;}
+#gameArea{margin-top:6px;padding:6px;border-radius:8px;background:#3a241a;border:1px solid var(--border);min-height:150px;font-size:12px;}
+#lightsSeekPanel{margin-top:4px;padding:4px;border-radius:8px;background:#3a241a;border:1px solid var(--border);font-size:11px;}
+#lightsSeekPanel h3{font-size:12px;margin-bottom:2px;}
+#lightsSeekPanel label{display:block;margin-bottom:2px;}
+#lightsSeekPanel input,#lightsSeekPanel select{width:100%;margin-top:1px;margin-bottom:2px;font-size:11px;}
+.joystick-area{margin-top:4px;display:flex;justify-content:space-between;gap:6px;}
+.joystick{width:70px;height:70px;border-radius:50%;border:2px solid var(--border);position:relative;touch-action:none;}
+.joystick-knob{width:26px;height:26px;border-radius:50%;background:var(--accent);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);}
+.action-buttons{display:flex;flex-direction:column;gap:4px;flex:1;}
+.action-buttons button{width:100%;padding:4px 6px;font-size:11px;}
+.vc-shell{margin-top:6px;padding:6px;border-radius:8px;background:#3a241a;border:1px solid var(--border);font-size:11px;}
+.vc-status{color:var(--muted);margin-bottom:2px;}
+.lobby{margin-top:6px;padding:6px;border-radius:8px;background:#3a241a;border:1px solid var(--border);display:none;}
+.lobby-cards{display:flex;gap:6px;}
+.lobby-card{flex:1;border:1px solid var(--border);border-radius:6px;padding:4px;text-align:center;font-size:11px;background:#2b1a14;}
+.lobby-title{text-align:center;font-size:12px;margin-bottom:4px;}
+.server-list{margin-top:4px;padding:4px;border-radius:6px;background:#3a241a;border:1px solid var(--border);display:none;max-height:120px;overflow-y:auto;font-size:11px;}
+.server-item{padding:3px 4px;border-radius:4px;border:1px solid var(--border);margin-bottom:3px;cursor:pointer;}
+.server-item:hover{background:#4a2f20;}
+.small-label{font-size:11px;color:var(--muted);margin-bottom:2px;}
+canvas{background:#120806;border-radius:6px;border:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="shell">
+<h1>☕ Coffee Game</h1>
+<div class="row">
+<input id="emojiInput" maxlength="2" placeholder="Emoji">
+<input id="nameInput" maxlength="16" placeholder="Name">
+<button id="saveProfileBtn">Save</button>
+</div>
+<div id="profileBox" class="profile">
+<div class="profile-line">
+<div class="profile-emoji" id="profileEmoji">☕</div>
+<div>
+<div id="profileName">Player</div>
+<div id="profileDevice" style="font-size:11px;color:var(--muted);">Device</div>
+</div>
+</div>
+</div>
+<div id="status"></div>
+<div id="error"></div>
+
+<div class="section">
+<div class="row">
+<button id="hostBtn">Make Coffee</button>
+<button id="joinBtn">Get Coffee</button>
+</div>
+<div class="lobby" id="hostLobby">
+<div class="lobby-title">Host Lobby</div>
+<div class="lobby-cards">
+<div class="lobby-card">
+<div class="small-label">Host</div>
+<div id="hostCardEmoji" style="font-size:20px;">☕</div>
+<div id="hostCardName">Host</div>
+<div id="hostCardDevice" style="font-size:11px;color:var(--muted);">Device</div>
+</div>
+<div class="lobby-card">
+<div class="small-label">Joiner</div>
+<div id="joinerCardEmoji" style="font-size:20px;opacity:.4;">?</div>
+<div id="joinerCardName" style="opacity:.6;">Waiting…</div>
+<div id="joinerCardDevice" style="font-size:11px;color:var(--muted);opacity:.6;">—</div>
+</div>
+</div>
+<div style="margin-top:4px;">
+<label class="small-label">Game</label>
+<select id="gameSelect">
+<option value="">Select a game…</option>
+<option value="ttt">Tic-Tac-Toe</option>
+<option value="c4">Connect 4</option>
+<option value="bship">Battleship</option>
+<option value="memory">Memory Match</option>
+<option value="tetris">Tetris Duel</option>
+<option value="pong">Pong Duel</option>
+<option value="ls">Lights&Seek</option>
+</select>
+<button id="startGameBtn">Start Game</button>
+</div>
+</div>
+
+<div class="server-list" id="serverList">
+<div class="small-label">Available Coffee Servers</div>
+<div id="serverItems"></div>
+</div>
+</div>
+
+<div class="section vc-shell">
+<div class="vc-status" id="vcStatus">Voice chat: idle</div>
+<div class="row">
+<button id="vcStartBtn">Start VC</button>
+<button id="vcStopBtn">Stop VC</button>
+<button id="vcMuteBtn">Mute/Unmute</button>
+</div>
+</div>
+
+<div class="section chat-shell">
+<div class="chat-log" id="chatLog"></div>
+<div class="chat-input-row">
+<input id="chatInput" maxlength="80" placeholder="Say something…">
+<button id="chatSendBtn">Send</button>
+</div>
+</div>
+
+<div class="section" id="gameSection">
+<div id="gameArea">Select a game in the lobby to begin.</div>
+</div>
+</div>
+
+<script>
+const profileEmoji=document.getElementById('profileEmoji');
+const profileName=document.getElementById('profileName');
+const profileDevice=document.getElementById('profileDevice');
+const profileBox=document.getElementById('profileBox');
+const emojiInput=document.getElementById('emojiInput');
+const nameInput=document.getElementById('nameInput');
+const saveProfileBtn=document.getElementById('saveProfileBtn');
+const statusEl=document.getElementById('status');
+const errorEl=document.getElementById('error');
+const hostBtn=document.getElementById('hostBtn');
+const joinBtn=document.getElementById('joinBtn');
+const hostLobby=document.getElementById('hostLobby');
+const serverList=document.getElementById('serverList');
+const serverItems=document.getElementById('serverItems');
+const hostCardEmoji=document.getElementById('hostCardEmoji');
+const hostCardName=document.getElementById('hostCardName');
+const hostCardDevice=document.getElementById('hostCardDevice');
+const joinerCardEmoji=document.getElementById('joinerCardEmoji');
+const joinerCardName=document.getElementById('joinerCardName');
+const joinerCardDevice=document.getElementById('joinerCardDevice');
+const gameSelect=document.getElementById('gameSelect');
+const startGameBtn=document.getElementById('startGameBtn');
+const vcStatus=document.getElementById('vcStatus');
+const vcStartBtn=document.getElementById('vcStartBtn');
+const vcStopBtn=document.getElementById('vcStopBtn');
+const vcMuteBtn=document.getElementById('vcMuteBtn');
+const chatLog=document.getElementById('chatLog');
+const chatInput=document.getElementById('chatInput');
+const chatSendBtn=document.getElementById('chatSendBtn');
+const gameArea=document.getElementById('gameArea');
+
+let isHost=false;
+let currentGame=null;
+let tttState,tttTurn;
+let c4State,c4Turn;
+let bshipBoard,bshipHits;
+let memoryCards,memoryFlipped,memoryLock;
+let tetrisState=null,tetrisTimer=null;
+let pongState=null,pongTimer=null;
+let lsState=null;
+
+function detectDevice(){
+const ua=navigator.userAgent||'';
+if(ua.includes('Android'))return'📱 Android';
+if(ua.includes('iPhone')||ua.includes('iPad'))return'📱 iOS';
+if(ua.includes('Mac'))return'💻 Mac';
+if(ua.includes('Win'))return'💻 Windows';
+return'📟 Device';
+}
+function setStatus(msg){statusEl.textContent=msg||'';}
+function setError(msg){errorEl.textContent=msg||'';}
+
+saveProfileBtn.onclick=()=>{
+const e=emojiInput.value.trim()||'☕';
+const n=nameInput.value.trim()||'Player';
+profileEmoji.textContent=e;
+profileName.textContent=n;
+profileDevice.textContent=detectDevice();
+profileBox.style.display='block';
+hostCardEmoji.textContent=e;
+hostCardName.textContent=n;
+hostCardDevice.textContent=profileDevice.textContent;
+setStatus('Profile saved.');
+};
+
+hostBtn.onclick=()=>{
+isHost=true;
+hostLobby.style.display='block';
+serverList.style.display='none';
+setStatus('Hosting Coffee… waiting for joiner.');
+setError('');
+try{Android&&Android.startServer&&Android.startServer('{"role":"host"}');}catch(e){}
+};
+joinBtn.onclick=()=>{
+isHost=false;
+hostLobby.style.display='none';
+serverList.style.display='block';
+serverItems.innerHTML='<div class="small-label">Scanning…</div>';
+setStatus('Scanning for Coffee servers…');
+setError('');
+try{Android&&Android.startClient&&Android.startClient('{"role":"joiner"}');}catch(e){}
+};
+
+function addServer(id,name,emoji,device){
+const div=document.createElement('div');
+div.className='server-item';
+div.textContent=`${emoji} ${name} — ${device}`;
+div.onclick=()=>{
+setStatus('Connecting to '+name+'…');
+try{Android&&Android.connectToServer&&Android.connectToServer(id);}catch(e){}
+};
+serverItems.appendChild(div);
+}
+window.onServerFound=function(serverJSON){
+serverItems.innerHTML='';
+try{
+const s=JSON.parse(serverJSON);
+addServer(s.id,s.name,s.emoji,s.device);
+}catch(e){serverItems.textContent='Error parsing server.';}
+};
+window.onConnectionStateChange=function(state){
+if(state==='connected'){
+setStatus('Connected!');
+joinerCardEmoji.style.opacity='1';
+joinerCardName.style.opacity='1';
+joinerCardDevice.style.opacity='1';
+joinerCardEmoji.textContent='🙂';
+joinerCardName.textContent='Joiner';
+joinerCardDevice.textContent='Connected';
+}else if(state==='disconnected'){
+setStatus('Disconnected.');
+}
+};
+
+startGameBtn.onclick=()=>{
+const v=gameSelect.value;
+if(!v){setError('Pick a game first.');return;}
+currentGame=v;
+setError('');
+setStatus('Starting '+gameSelect.options[gameSelect.selectedIndex].text+'…');
+try{Android&&Android.sendPacket&&Android.sendPacket(JSON.stringify({type:'startGame',game:v}));}catch(e){}
+loadGame(v);
+};
+
+vcStartBtn.onclick=()=>{
+vcStatus.textContent='Voice chat: active';
+try{Android&&Android.startVoice&&Android.startVoice();}catch(e){}
+};
+vcStopBtn.onclick=()=>{
+vcStatus.textContent='Voice chat: stopped';
+try{Android&&Android.stopVoice&&Android.stopVoice();}catch(e){}
+};
+vcMuteBtn.onclick=()=>{
+try{Android&&Android.toggleMute&&Android.toggleMute();}catch(e){}
+};
+
+function addChatMessage(text,kind){
+const div=document.createElement('div');
+div.textContent=text;
+div.className=kind==='self'?'chat-msg-self':kind==='remote'?'chat-msg-remote':'chat-msg-system';
+chatLog.appendChild(div);
+chatLog.scrollTop=chatLog.scrollHeight;
+}
+chatSendBtn.onclick=()=>{
+const msg=chatInput.value.trim();
+if(!msg)return;
+chatInput.value='';
+addChatMessage(profileName.textContent+': '+msg,'self');
+try{Android&&Android.sendPacket&&Android.sendPacket(JSON.stringify({type:'chat',text:msg}));}catch(e){}
+};
+window.onCoffeePacket=function(packetJSON){
+try{
+const p=JSON.parse(packetJSON);
+if(p.type==='chat'){addChatMessage('Them: '+p.text,'remote');}
+if(p.type==='startGame'){currentGame=p.game;loadGame(p.game);}
+}catch(e){}
+};
+
+function clearGameArea(){
+gameArea.innerHTML='';
+if(tetrisTimer){clearInterval(tetrisTimer);tetrisTimer=null;}
+if(pongTimer){clearInterval(pongTimer);pongTimer=null;}
+}
+function loadGame(id){
+clearGameArea();
+if(id==='ttt')initTTT();
+else if(id==='c4')initC4();
+else if(id==='bship')initBship();
+else if(id==='memory')initMemory();
+else if(id==='tetris')initTetris();
+else if(id==='pong')initPong();
+else if(id==='ls')initLS();
+}
+
+/* Tic-Tac-Toe */
+function initTTT(){
+tttState=Array(9).fill(null);tttTurn='X';
+const board=document.createElement('div');
+board.className='board';
+board.style.gridTemplateColumns='repeat(3,26px)';
+for(let i=0;i<9;i++){
+const cell=document.createElement('div');
+cell.className='board-cell';
+cell.onclick=()=>tttClick(i,cell);
+board.appendChild(cell);
+}
+gameArea.textContent='Tic-Tac-Toe';
+gameArea.appendChild(board);
+}
+function tttClick(i,cell){
+if(tttState[i])return;
+tttState[i]=tttTurn;
+cell.textContent=tttTurn;
+if(tttWin(tttTurn)){setStatus(tttTurn+' wins!');return;}
+if(tttState.every(x=>x)){setStatus('Draw.');return;}
+tttTurn=tttTurn==='X'?'O':'X';
+}
+function tttWin(p){
+const w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+return w.some(a=>a.every(i=>tttState[i]===p));
+}
+
+/* Connect 4 */
+function initC4(){
+c4State=Array(6).fill(0).map(()=>Array(7).fill(null));c4Turn='R';
+const board=document.createElement('div');
+board.className='board';
+board.style.gridTemplateColumns='repeat(7,26px)';
+for(let r=0;r<6;r++){
+for(let c=0;c<7;c++){
+const cell=document.createElement('div');
+cell.className='board-cell';
+cell.onclick=()=>c4Drop(c);
+board.appendChild(cell);
+}
+}
+gameArea.textContent='Connect 4';
+gameArea.appendChild(board);
+}
+function c4Drop(col){
+for(let r=5;r>=0;r--){
+if(!c4State[r][col]){
+c4State[r][col]=c4Turn;
+renderC4();
+if(c4Check(c4Turn)){setStatus((c4Turn==='R'?'Red':'Yellow')+' wins!');}
+c4Turn=c4Turn==='R'?'Y':'R';
+return;
+}
+}
+}
+function renderC4(){
+const cells=gameArea.querySelectorAll('.board-cell');
+let idx=0;
+for(let r=0;r<6;r++){
+for(let c=0;c<7;c++){
+const v=c4State[r][c];
+cells[idx].textContent=v? (v==='R'?'●':'○'):'';
+cells[idx].style.color=v==='R'?'#ff6b6b':'#ffe66d';
+idx++;
+}
+}
+}
+function c4Check(p){
+const s=c4State;
+for(let r=0;r<6;r++)for(let c=0;c<7;c++){
+if(c+3<7&&s[r][c]===p&&s[r][c+1]===p&&s[r][c+2]===p&&s[r][c+3]===p)return true;
+if(r+3<6&&s[r][c]===p&&s[r+1][c]===p&&s[r+2][c]===p&&s[r+3][c]===p)return true;
+if(r+3<6&&c+3<7&&s[r][c]===p&&s[r+1][c+1]===p&&s[r+2][c+2]===p&&s[r+3][c+3]===p)return true;
+if(r-3>=0&&c+3<7&&s[r][c]===p&&s[r-1][c+1]===p&&s[r-2][c+2]===p&&s[r-3][c+3]===p)return true;
+}
+return false;
+}
+
+/* Battleship (single board vs hidden ships) */
+function initBship(){
+const size=8;
+bshipBoard=Array(size).fill(0).map(()=>Array(size).fill(0));
+bshipHits=0;
+placeShip(3);placeShip(2);placeShip(2);
+const board=document.createElement('div');
+board.className='board';
+board.style.gridTemplateColumns=`repeat(${size},26px)`;
+for(let r=0;r<size;r++){
+for(let c=0;c<size;c++){
+const cell=document.createElement('div');
+cell.className='board-cell';
+cell.onclick=()=>bshipClick(r,c,cell);
+board.appendChild(cell);
+}
+}
+gameArea.textContent='Battleship (find the ships!)';
+gameArea.appendChild(board);
+}
+function placeShip(len){
+const size=8;
+let placed=false;
+while(!placed){
+const horiz=Math.random()<.5;
+const r=Math.floor(Math.random()*size);
+const c=Math.floor(Math.random()*size);
+let ok=true;
+for(let i=0;i<len;i++){
+const rr=r+(horiz?0:i),cc=c+(horiz?i:0);
+if(rr>=size||cc>=size||bshipBoard[rr][cc]===1){ok=false;break;}
+}
+if(!ok)continue;
+for(let i=0;i<len;i++){
+const rr=r+(horiz?0:i),cc=c+(horiz?i:0);
+bshipBoard[rr][cc]=1;
+}
+placed=true;
+}
+}
+function bshipClick(r,c,cell){
+if(cell.textContent)return;
+if(bshipBoard[r][c]===1){
+cell.textContent='✕';cell.style.color='#ff6b6b';bshipHits++;
+setStatus('Hit! Total hits: '+bshipHits);
+}else{
+cell.textContent='•';cell.style.color='#c9b39a';
+setStatus('Miss.');
+}
+}
+
+/* Memory Match */
+function initMemory(){
+const icons=['🍎','🍎','🍋','🍋','🍇','🍇','🍒','🍒','🥐','🥐','🍩','🍩','🍪','🍪','🍰','🍰'];
+memoryCards=icons.sort(()=>Math.random()-.5);
+memoryFlipped=[];memoryLock=false;
+const board=document.createElement('div');
+board.className='board';
+board.style.gridTemplateColumns='repeat(4,26px)';
+for(let i=0;i<16;i++){
+const cell=document.createElement('div');
+cell.className='board-cell';
+cell.dataset.index=i;
+cell.onclick=()=>memoryClick(cell);
+board.appendChild(cell);
+}
+gameArea.textContent='Memory Match';
+gameArea.appendChild(board);
+}
+function memoryClick(cell){
+if(memoryLock)return;
+const i=+cell.dataset.index;
+if(memoryFlipped.includes(i)||cell.textContent)return;
+cell.textContent=memoryCards[i];
+memoryFlipped.push(i);
+if(memoryFlipped.length===2){
+memoryLock=true;
+const[a,b]=memoryFlipped;
+if(memoryCards[a]===memoryCards[b]){
+setTimeout(()=>{memoryFlipped=[];memoryLock=false;checkMemoryWin();},300);
+}else{
+setTimeout(()=>{
+const cells=gameArea.querySelectorAll('.board-cell');
+cells[a].textContent='';cells[b].textContent='';
+memoryFlipped=[];memoryLock=false;
+},600);
+}
+}
+}
+function checkMemoryWin(){
+const cells=gameArea.querySelectorAll('.board-cell');
+if([...cells].every(c=>c.textContent)){setStatus('All pairs found!');}
+}
+
+/* Tetris (very small, single-player) */
+function initTetris(){
+const w=10,h=18;
+tetrisState={w,h,grid:Array(h).fill(0).map(()=>Array(w).fill(0)),piece:null,x:0,y:0,shape:0};
+const wrap=document.createElement('div');
+wrap.innerHTML='<div style="margin-bottom:4px;">Tetris Duel (local)</div>';
+const canvas=document.createElement('canvas');
+canvas.width=200;canvas.height=360;
+wrap.appendChild(canvas);
+gameArea.appendChild(wrap);
+const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+const shapes=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[1,1,0],[0,1,1]],[[0,1,1],[1,1,0]]];
+function newPiece(){
+tetrisState.shape=Math.floor(Math.random()*shapes.length);
+tetrisState.piece=shapes[tetrisState.shape];
+tetrisState.x=3;tetrisState.y=0;
+if(collide(0,0)){setStatus('Tetris board full.');clearInterval(tetrisTimer);}
+}
+function collide(dx,dy){
+const p=tetrisState.piece,g=tetrisState.grid;
+for(let r=0;r<p.length;r++)for(let c=0;c<p[0].length;c++){
+if(!p[r][c])continue;
+const x=tetrisState.x+c+dx,y=tetrisState.y+r+dy;
+if(y>=h||x<0||x>=w||g[y]&&g[y][x])return true;
+}
+return false;
+}
+function merge(){
+const p=tetrisState.piece,g=tetrisState.grid;
+for(let r=0;r<p.length;r++)for(let c=0;c<p[0].length;c++){
+if(p[r][c])g[tetrisState.y+r][tetrisState.x+c]=1;
+}
+}
+function clearLines(){
+let g=tetrisState.grid;
+for(let r=h-1;r>=0;r--){
+if(g[r].every(v=>v)){g.splice(r,1);g.unshift(Array(w).fill(0));r++;}
+}
+}
+function draw(){
+ctx.fillStyle='#120806';ctx.fillRect(0,0,canvas.width,canvas.height);
+const g=tetrisState.grid;
+for(let r=0;r<h;r++)for(let c=0;c<w;c++){
+if(g[r][c]){ctx.fillStyle='#f5c38b';ctx.fillRect(c*20,r*20,19,19);}
+}
+const p=tetrisState.piece;
+if(p)for(let r=0;r<p.length;r++)for(let c=0;c<p[0].length;c++){
+if(p[r][c]){ctx.fillStyle='#ffd19f';ctx.fillRect((tetrisState.x+c)*20,(tetrisState.y+r)*20,19,19);}
+}
+}
+function step(){
+if(!tetrisState.piece)newPiece();
+if(!collide(0,1)){tetrisState.y++;}else{merge();clearLines();newPiece();}
+draw();
+}
+document.onkeydown=(e)=>{
+if(!tetrisState.piece)return;
+if(e.key==='ArrowLeft'&&!collide(-1,0))tetrisState.x--;
+if(e.key==='ArrowRight'&&!collide(1,0))tetrisState.x++;
+if(e.key==='ArrowDown'&&!collide(0,1))tetrisState.y++;
+if(e.key==='ArrowUp'){
+const p=tetrisState.piece;
+const r=p[0].map((_,i)=>p.map(row=>row[i]).reverse());
+const old=tetrisState.piece;
+tetrisState.piece=r;
+if(collide(0,0))tetrisState.piece=old;
+}
+draw();
+};
+newPiece();draw();
+tetrisTimer=setInterval(step,500);
+}
+
+/* Pong Duel (local) */
+function initPong(){
+pongState={w:200,h:120,ballX:100,ballY:60,dx:2,dy:1.5,p1:50,p2:50};
+const wrap=document.createElement('div');
+wrap.innerHTML='<div style="margin-bottom:4px;">Pong Duel (local)</div>';
+const canvas=document.createElement('canvas');
+canvas.width=pongState.w;canvas.height=pongState.h;
+wrap.appendChild(canvas);
+gameArea.appendChild(wrap);
+const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+document.onkeydown=(e)=>{
+if(e.key==='ArrowUp')pongState.p2-=5;
+if(e.key==='ArrowDown')pongState.p2+=5;
+if(e.key==='w')pongState.p1-=5;
+if(e.key==='s')pongState.p1+=5;
+};
+function step(){
+const s=pongState;
+s.ballX+=s.dx;s.ballY+=s.dy;
+if(s.ballY<5||s.ballY>s.h-5)s.dy*=-1;
+if(s.ballX<15&&s.ballY>s.p1&&s.ballY<s.p1+30)s.dx=Math.abs(s.dx);
+if(s.ballX>s.w-15&&s.ballY>s.p2&&s.ballY<s.p2+30)s.dx=-Math.abs(s.dx);
+if(s.ballX<0||s.ballX>s.w){s.ballX=100;s.ballY=60;}
+ctx.fillStyle='#120806';ctx.fillRect(0,0,s.w,s.h);
+ctx.fillStyle='#f5c38b';ctx.fillRect(5,s.p1,4,30);
+ctx.fillStyle='#ffd19f';ctx.fillRect(s.w-9,s.p2,4,30);
+ctx.fillStyle='#ffe66d';ctx.beginPath();ctx.arc(s.ballX,s.ballY,4,0,Math.PI*2);ctx.fill();
+}
+pongTimer=setInterval(step,30);
+}
+
+/* Lights&Seek (simple grid + joystick) */
+function initLS(){
+lsState={size:8,x:0,y:0};
+gameArea.innerHTML='';
+const title=document.createElement('div');
+title.textContent='Lights&Seek (move with joystick)';
+gameArea.appendChild(title);
+const board=document.createElement('div');
+board.className='board';
+board.style.gridTemplateColumns='repeat(8,20px)';
+for(let r=0;r<8;r++){
+for(let c=0;c<8;c++){
+const cell=document.createElement('div');
+cell.className='board-cell';
+cell.style.width='20px';cell.style.height='20px';
+cell.dataset.r=r;cell.dataset.c=c;
+board.appendChild(cell);
+}
+}
+gameArea.appendChild(board);
+const panel=document.createElement('div');
+panel.id='lightsSeekPanel';
+panel.innerHTML='<h3>Controls</h3><div class="joystick-area"><div class="joystick" id="lsJoy"><div class="joystick-knob" id="lsKnob"></div></div><div class="action-buttons"><button id="lsFlash">Flashlight</button><button id="lsAttack">Attack</button></div></div>';
+gameArea.appendChild(panel);
+renderLS();
+const joy=document.getElementById('lsJoy');
+const knob=document.getElementById('lsKnob');
+let dragging=false;
+joy.onmousedown=e=>{dragging=true;};
+document.onmouseup=()=>{dragging=false;knob.style.left='50%';knob.style.top='50%';};
+joy.onmousemove=e=>{
+if(!dragging)return;
+const rect=joy.getBoundingClientRect();
+const x=e.clientX-rect.left-rect.width/2;
+const y=e.clientY-rect.top-rect.height/2;
+if(Math.abs(x)>Math.abs(y)){
+if(x>10)moveLS(1,0);
+else if(x<-10)moveLS(-1,0);
+}else{
+if(y>10)moveLS(0,1);
+else if(y<-10)moveLS(0,-1);
+}
+knob.style.left='50%';knob.style.top='50%';
+};
+document.getElementById('lsFlash').onclick=()=>setStatus('Flashlight pulse! (local visual)');
+document.getElementById('lsAttack').onclick=()=>setStatus('Attack triggered! (local visual)');
+}
+function moveLS(dx,dy){
+lsState.x=Math.max(0,Math.min(7,lsState.x+dx));
+lsState.y=Math.max(0,Math.min(7,lsState.y+dy));
+renderLS();
+}
+function renderLS(){
+const cells=gameArea.querySelectorAll('.board-cell');
+cells.forEach(c=>{c.textContent='';c.style.background='#3a241a';});
+cells.forEach(c=>{
+const r=+c.dataset.r,cx=+c.dataset.c;
+if(r===lsState.y&&cx===lsState.x){c.textContent='🙂';c.style.background='#f5c38b';}
+});
+}
+</script>
+</body>
+</html>
